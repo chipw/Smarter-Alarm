@@ -7,7 +7,7 @@
  *  Please visit <http://statusbits.github.io/smartalarm/> for more
  *  information.
  *
- *  Version 2.4.7 (5/17/2017)
+ *  Version 2.4.8 (5/23/2017)
  *
  *  The latest version of this file can be found on GitHub at:
  *  <https://github.com/statusbits/smartalarm/blob/master/SmartAlarm.groovy>
@@ -34,8 +34,8 @@ import groovy.json.JsonSlurper
 
 definition(
     name: "Smarter Alarm+SHM",
-    namespace: "statusbits",
-    author: "geko@statusbits.com",
+    namespace: "chipw",
+    author: "chip.warner@gmail.com",
     description: '''A multi-zone virtual alarm panel, featuring customizable\
  security zones. Setting of an alarm can activate sirens, turn on light\
  switches, push notification and text message. Alarm is armed and disarmed\
@@ -43,7 +43,7 @@ definition(
     category: "Safety & Security",
     iconUrl: "http://statusbits.github.io/icons/SmartAlarm-128.png",
     iconX2Url: "http://statusbits.github.io/icons/SmartAlarm-256.png",
-    oauth: [displayName:"Smart Alarm", displayLink:"http://statusbits.github.io/smartalarm/"]
+    oauth: [displayName:"Smarter Alarm", displayLink:"http://www.smartthings.com"]
 )
 
 preferences {
@@ -129,8 +129,8 @@ def pageSetup() {
             }
         }
         section("Setup Menu") {
-            href "pageSelectZones", title:"Add/Remove Zones", description:"Tap to open"
-            href "pageConfigureZones", title:"Configure Zones", description:"Tap to open"
+            href "pageSelectZones", title:"Add/Remove Sensors", description:"Tap to open"
+            href "pageConfigureZones", title:"Configure Zones (for Sensors)", description:"Tap to open"
             href "pageArmingOptions", title:"Arming/Disarming Options", description:"Tap to open"
             href "pageAlarmOptions", title:"Alarm Options", description:"Tap to open"
             href "pageNotifications", title:"Notification Options", description:"Tap to open"
@@ -187,7 +187,7 @@ def pageUninstall() {
         "Smarter Alarm version ${getVersion()} is not backward compatible " +
         "with the currently installed version. Please uninstall the " +
         "current version by tapping the Uninstall button below, then " +
-        "re-install Smart Alarm from the Dashboard. We are sorry for the " +
+        "re-install Smarter Alarm from the Dashboard. We are sorry for the " +
         "inconvenience."
 
     def pageProperties = [
@@ -305,12 +305,12 @@ def pageHistory() {
     }
 }
 
-// Show "Add/Remove Zones" page
+// Show "Add/Remove Zones (Sensors)" page
 def pageSelectZones() {
     LOG("pageSelectZones()")
 
     def helpPage =
-        "A security zone is an area of your property protected by a sensor " +
+        "A security zone is an area of your property protected by a Sensor " +
         "(contact, motion, movement, moisture or smoke)."
 
     def inputContact = [
@@ -361,7 +361,7 @@ def pageSelectZones() {
     ]
 
     return dynamicPage(pageProperties) {
-        section("Add/Remove Zones") {
+        section("Add/Remove Zones (for Sensors)") {
             paragraph helpPage
             input inputContact
             input inputMotion
@@ -372,7 +372,7 @@ def pageSelectZones() {
     }
 }
 
-// Show "Configure Zones" page
+// Show "Configure Zones & Sensors" page
 def pageConfigureZones() {
     LOG("pageConfigureZones()")
 
@@ -397,7 +397,7 @@ def pageConfigureZones() {
     ]
 
     return dynamicPage(pageProperties) {
-        section("Configure Zones") {
+        section("Configure Zones for Sensors") {
             paragraph helpZones
         }
 
@@ -559,6 +559,14 @@ def pageArmingOptions() {
         multiple:	false,
         required:	false
     ]
+    
+    def inputSwitchesOnArmed = [
+        name:           "SwitchesOnArmed",
+        type:           "capability.switch",
+        title:          "Which switches?",
+        multiple:       true,
+        required:       false
+    ]    
 
     def pageProperties = [
         name:       "pageArmingOptions",
@@ -572,27 +580,31 @@ def pageArmingOptions() {
             paragraph helpArming
         }
 
+		section("Sync status with Smart Home Monitor (SHM)") {
+        	input inputSyncWithSHM
+            input inputTriggerSHM
+            input inputVirtualswitchSHM
+        }
+
 		section("Keypads") {
         	input inputKeypads
         }
         
-        section("Sync status with Smart Home Monitor (SHM)") {
-        	input inputSyncWithSHM
-            input inputTriggerSHM
-            input inputVirtualswitchSHM
+        section("Toggle Switches: Armed=ON, Disarmed=OFF") {
+			input inputSwitchesOnArmed
+        }    
+
+        section("Exit and Entry Delay") {
+            paragraph helpDelay
+            input inputDelay
+            input inputDelayStay
+			input inputExitDelayStay
         }
 
 		section("Auto Arm/Disarm from Hub Modes (Optional)") {
             input inputAwayModes
             input inputStayModes
             input inputDisarmModes
-        }
-        
-        section("Exit and Entry Delay") {
-            paragraph helpDelay
-            input inputDelay
-            input inputDelayStay
-			input inputExitDelayStay
         }
     }
 }
@@ -754,7 +766,7 @@ def pageNotifications() {
     def inputNotificationDevice = [
         name:       "notificationDevice",
         type:       "capability.notification",
-        title:      "Which smart alarm notification device?",
+        title:      "Which Smarter Alarm notification device?",
         multiple:   false,
         required:   false
     ]
@@ -770,8 +782,9 @@ def pageNotifications() {
     def inputChimeOnStatusChange = [
     	name:			"ChimeOnStatusChange",
         type:			"bool",
-        title:			"Chime on Status Change",
+        title:			"Chime on Arm/Disarm Update",
         defaultValue: 	true,
+        submitOnChange:	true,
         required:		true
     ]    
 
@@ -988,6 +1001,12 @@ def pageNotifications() {
 			input inputChimeDevices
             input inputChimeOnStatusChange
         }
+        if (ChimeOnStatusChange == true) {
+        section("Quiet hours (do not Chime for Arm/Disarm Update)") {
+        	input "QuietfromTime", "time", title: "From", required: true
+        	input "QuiettoTime", "time", title: "To", required: true
+        }
+		}
         section("Siren Notifcations")
         {
             input inputSirenOnWaterAlert
@@ -1040,7 +1059,7 @@ def pageRemoteOptions() {
     LOG("pageRemoteOptions()")
 
     def helpRemote =
-        "You can arm and disarm Smart Alarm using any compatible remote " +
+        "You can arm and disarm Smarter Alarm using any compatible remote " +
         "control, for example Aeon Labs Minimote."
 
     def inputRemotes = [
@@ -1151,15 +1170,15 @@ def pageRestApiOptions() {
     LOG("pageRestApiOptions()")
 
     def textHelp =
-        "Smart Alarm can be controlled remotely by any Web client using " +
-        "REST API. Please refer to Smart Alarm documentation for more " +
+        "Smarter Alarm can be controlled remotely by any Web client using " +
+        "REST API. Please refer to Smarter Alarm documentation for more " +
         "information."
 
     def textPincode =
         "You can specify optional PIN code to protect arming and disarming " +
-        "Smart Alarm via REST API from unauthorized access. If set, the " +
-        "PIN code is always required for disarming Smart Alarm, however " +
-        "you can optionally turn it off for arming Smart Alarm."
+        "Smarter Alarm via REST API from unauthorized access. If set, the " +
+        "PIN code is always required for disarming Smarter Alarm, however " +
+        "you can optionally turn it off for arming Smarter Alarm."
 
     def inputRestApi = [
         name:           "restApiEnabled",
@@ -1211,14 +1230,14 @@ def pageRestApiOptions() {
 }
 
 def installed() {
-    LOG("installed()")
+    //LOG("installed()")
 
     initialize()
     state.installed = true
 }
 
 def updated() {
-    LOG("updated()")
+    //LOG("updated()")
 
     unschedule()
     unsubscribe()
@@ -1248,7 +1267,7 @@ private def setupInit() {
 }
 
 private def initialize() {
-    log.info "Smart Alarm. Version ${getVersion()}. ${textCopyright()}"
+    log.info "Smarter Alarm. Version ${getVersion()}. ${textCopyright()}"
     LOG("settings: ${settings}")
 
     clearAlarm()
@@ -1258,7 +1277,7 @@ private def initialize() {
     
 	//fetch SHM Alarm Status
     def currentSHM = location.currentState("alarmSystemStatus").value.toLowerCase()
-	LOG("current alarm state: $currentSHM")
+    //LOG("current alarm state: $currentSHM")
     
     if (currentSHM == "away") {
         atomicState.armed = true
@@ -1282,26 +1301,45 @@ private def initialize() {
         subscribe(settings.notificationDevice, "switch.off", gotDismissMessage)
     }
 
-    STATE()
+    subscribe(settings.keypads, "CodeEntryCallback", gotKeypadStatusUpdateSyncMessage)
+
+    //STATE()
     reportStatus()
 }
 
 def gotDismissMessage(evt)
 {
-    log.debug "Got the dismiss message from the notification device.. clearing alarm!"
+    //log.debug "Got the dismiss message from the notification device.. clearing alarm!"
     clearAlarm()
 }
 
-private def clearAlarm() {
-    LOG("clearAlarm()")
+def gotKeypadStatusUpdateSyncMessage(evt)
+{
+    //log.debug "Got the status update message from Keypad! Value: '${evt.value}' Status: ${atomicState.armed}"
+	if (atomicState.armed == true) {
+		if (atomicState.stay == true) {
+   		     keypads?.each() { it.setArmedStay() }
+		    //log.debug "Keypad Armed Stay"
+ 	  	 } else {
+  		   	keypads?.each() { it.setArmedAway() }
+  	    	//log.debug "Keypad Armed Away"
+ 	   }
+    } else {
+     	keypads?.each() { it.setDisarmed() }
+        //log.debug "Keypad Disarmed"
+    }
+    
+}
 
+private def clearAlarm() {
+    //LOG("clearAlarm()")
     state.alarms = []
     settings.alarms*.off()
 
     // Turn off only those switches that we've turned on
     def switchesOff = state.offSwitches
     if (switchesOff) {
-        LOG("switchesOff: ${switchesOff}")
+        //LOG("switchesOff: ${switchesOff}")
         settings.switches.each() {
             if (switchesOff.contains(it.id)) {
                 it.off()
@@ -1309,7 +1347,7 @@ private def clearAlarm() {
         }
         state.offSwitches = []
     }
-    //Close Virtual Door Control (if it is being used to activate SHM ALARM)
+    //Close Virtual Door Control (if it is being used as a tripwire to activate SHM ALARM)
     if (settings.TriggerSHM == true) {
 		VirtualswitchSHM?.each() { 
            	it.close()
@@ -1319,7 +1357,7 @@ private def clearAlarm() {
 }
 
 private def initZones() {
-    LOG("initZones()")
+    //LOG("initZones()")
 
     state.zones = []
 
@@ -1414,7 +1452,7 @@ private def initZones() {
 }
 
 private def initButtons() {
-    LOG("initButtons()")
+    //LOG("initButtons()")
 
     state.buttonActions = []
     if (settings.remotes) {
@@ -1473,7 +1511,7 @@ def onSmoke(evt)    { onZoneEvent(evt, "smoke") }
 def onWater(evt)    { onZoneEvent(evt, "water") }
 
 private def onZoneEvent(evt, sensorType) {
-    LOG("onZoneEvent(${evt.displayName}, ${sensorType})")
+    //LOG("onZoneEvent(${evt.displayName}, ${sensorType})")
 
     state.alertType = sensorType
     def zone = getZoneForDevice(evt.deviceId, sensorType)
@@ -1494,11 +1532,12 @@ private def onZoneEvent(evt, sensorType) {
             {
         		settings.alarms*.strobe()
             }
-            if (atomicState.entrydelay == false) {
-            	atomicState.entrydelay == true
+
+			if (atomicState.entrydelay == false) {
+            	atomicState.entrydelay = true
             	keypads?.each() { it.setEntryDelay(state.delay) }
+	            myRunIn(state.delay, activateAlarm)
             }
-            myRunIn(state.delay, activateAlarm)
         }
     }
     else if (zone.chime)
@@ -1512,7 +1551,7 @@ private def onZoneEvent(evt, sensorType) {
 }
 
 def onLocation(evt) {
-    LOG("onLocation(${evt.value})")
+   //LOG("onLocation(${evt.value})")
 
     String mode = evt.value
     if (settings.awayModes?.contains(mode)) {
@@ -1525,7 +1564,7 @@ def onLocation(evt) {
 }
 
 def onButtonEvent(evt) {
-    LOG("onButtonEvent(${evt.displayName})")
+    //LOG("onButtonEvent(${evt.displayName})")
 
     if (!state.buttonActions || !evt.data) {
         return
@@ -1541,14 +1580,14 @@ def onButtonEvent(evt) {
         }
 
         if (item) {
-            LOG("Executing '${item.action}' button action")
+            //LOG("Executing '${item.action}' button action")
             "${item.action}"()
         }
     }
 }
 
 def armAway() {
-    LOG("armAway()")
+    //LOG("armAway()")
 	history("Armed Away", "Alarm armed away")
 
     if (!atomicState.armed || atomicState.stay) {
@@ -1560,7 +1599,7 @@ def armAway() {
 }
 
 def armStay() {
-    LOG("armStay()")
+    //LOG("armStay()")
 	history("Armed Stay", "Alarm armed stay")
 
     if (!atomicState.armed || !atomicState.stay) {
@@ -1573,35 +1612,44 @@ def armStay() {
 }
 
 def disarm() {
-    LOG("disarm()")
+    //LOG("disarm()")
 	history("Disarmed", "Alarm disarmed")
     
-    if (atomicState.armed) {
+    if (atomicState.armed || atomicState.stay) {
+    	//LOG("disarm() -- was armed")
         atomicState.armed = false
         atomicState.stay = false
 		atomicState.entrydelay = false
-        
+
         state.zones.each() {
             if (it.zoneType != "alert") {
                 it.armed = false
             }
         }
-
+        
+        keypads?.each() { it.setDisarmed() }
+        
         if (settings.ChimeOnStatusChange == true) {
-    		chimeDevices?.each() { 
+            def between = timeOfDayIsBetween(QuietfromTime, QuiettoTime, new Date(), location.timeZone)
+    		if (!between || (!QuietfromTime && !QuiettoTime)) {
+    	    	//LOG("disarm() -- CHIME")
+	    		chimeDevices?.each() { 
                	it.beep()
-            }
+        	    }
+	    	}
 		}
         
-		keypads?.each() { it.setDisarmed() }
+		SwitchesOnArmed?.each() { 
+	       	it.off()
+		}            
         
-  		//Close Virtual Contact Sensor to prepare SHM Alarm trigger
+        //Close Virtual Contact Sensor to prepare SHM Alarm trigger
    		if (settings.TriggerSHM == true) {
 			VirtualswitchSHM?.each() { 
 	           	it.close()
 			}
 		}
-        
+
 		sendLocationEvent(name: "alarmSystemStatus", value: "off")
 
 		reset()
@@ -1614,14 +1662,14 @@ def disarm() {
 }
 
 def panic() {
-    LOG("panic()")
+    //LOG("panic()")
 	atomicState.armed = true
     state.alarms << "Panic"
     activateAlarm()
 }
 
 def reset() {
-    LOG("reset()")
+    //LOG("reset()")
 
     unschedule()
     clearAlarm()
@@ -1641,13 +1689,15 @@ def reset() {
 }
 
 def exitDelayExpired() {
-    LOG("exitDelayExpired()")
 
     def armed = atomicState.armed
     def stay = atomicState.stay
+
+	//LOG("exitDelayExpired(${armed})")
+    
     if (!armed) {
-        log.warn "exitDelayExpired: unexpected state!"
-        STATE()
+        log.debug "exitDelayExpired: unexpected state!"
+        //STATE()
         return
     }
 
@@ -1660,15 +1710,11 @@ def exitDelayExpired() {
     
 	atomicState.entrydelay = false
     
-	if(stay)
-    {
+	if(stay) {
         keypads?.each() { it.setArmedStay() }
-    }
-    else
-    {
+    } else {
      	keypads?.each() { it.setArmedAway() }
     }
-    	
 
     def msg = "${location.name}: all "
     if (stay) {
@@ -1681,7 +1727,7 @@ def exitDelayExpired() {
 }
 
 private def armPanel(stay) {
-    LOG("armPanel(${stay})")
+    //LOG("armPanel(${stay})")
 
     unschedule()
     clearAlarm()
@@ -1712,29 +1758,39 @@ private def armPanel(stay) {
         }
     }
 
-    if (settings.ChimeOnStatusChange == true) {
-    		chimeDevices?.each() { 
-               	it.beep()
-            }
-	}
-        
+    //LOG("armDelay ${armDelay})")
+    //LOG("settings.stayExitDelayOff ${settings.stayExitDelayOff})")
     def delay = armDelay && !(stay && settings.stayExitDelayOff) ? atomicState.delay : 0
     if (delay) {
+    	//LOG("setting Exit Delay")
     	keypads?.each() { it.setExitDelay(delay) }
         myRunIn(delay, exitDelayExpired)
     }
     else
     {
-    	if(stay)
-        {
+    	//LOG("No Exit Delay -- arming now")
+    	if (stay) {
     		keypads?.each() { it.setArmedStay() }
-        }
-        else
-        {
+        } else {
         	keypads?.each() { it.setArmedAway() }
         }
+        
+        if (settings.ChimeOnStatusChange == true) {
+            def between = timeOfDayIsBetween(QuietfromTime, QuiettoTime, new Date(), location.timeZone)
+    		if (!between || (!QuietfromTime && !QuiettoTime)) {
+    	    	//LOG("disarm() -- CHIME")
+	    		chimeDevices?.each() { 
+               	it.beep()
+        	    }
+	    	}
+		}
+
     }
 
+	SwitchesOnArmed?.each() { 
+       	it.on()
+	}    
+    
     def mode = stay ? "STAY" : "AWAY"
     def msg = "${location.name} "
     if (delay) {
@@ -1743,13 +1799,14 @@ private def armPanel(stay) {
         msg += "is ARMED ${mode}."
     }
 
-    notify(msg)
+	notify(msg)
     notifyVoice()
+    
 }
 
 // .../armaway REST API endpoint
 def apiArmAway() {
-    LOG("apiArmAway()")
+    //LOG("apiArmAway()")
 
     if (!isRestApiEnabled()) {
         log.error "REST API disabled"
@@ -1767,7 +1824,7 @@ def apiArmAway() {
 
 // .../armstay REST API endpoint
 def apiArmStay() {
-    LOG("apiArmStay()")
+    //LOG("apiArmStay()")
 
     if (!isRestApiEnabled()) {
         log.error "REST API disabled"
@@ -1785,7 +1842,7 @@ def apiArmStay() {
 
 // .../disarm REST API endpoint
 def apiDisarm() {
-    LOG("apiDisarm()")
+    //LOG("apiDisarm()")
 
     if (!isRestApiEnabled()) {
         log.error "REST API disabled"
@@ -1803,7 +1860,7 @@ def apiDisarm() {
 
 // .../panic REST API endpoint
 def apiPanic() {
-    LOG("apiPanic()")
+    //LOG("apiPanic()")
 
     if (!isRestApiEnabled()) {
         log.error "REST API disabled"
@@ -1816,7 +1873,7 @@ def apiPanic() {
 
 // .../status REST API endpoint
 def apiStatus() {
-    LOG("apiStatus()")
+    //LOG("apiStatus()")
 
     if (!isRestApiEnabled()) {
         log.error "REST API disabled"
@@ -1832,7 +1889,7 @@ def apiStatus() {
 }
 
 def activateAlarm() {
-    LOG("activateAlarm()")
+    //LOG("activateAlarm()")
 
     if (state.alarms.size() == 0) {
         log.warn "activateAlarm: false alarm"
@@ -1882,20 +1939,23 @@ def activateAlarm() {
 		}
     }
     
-    // Only turn on those switches that are currently off
+	// Only turn on those switches that are currently off
     def switchesOn = settings.switches?.findAll { it?.currentSwitch == "off" }
-    LOG("switchesOn: ${switchesOn}")
+    //LOG("switchesOn: ${switchesOn}")
     if (switchesOn) {
         switchesOn*.on()
         state.offSwitches = switchesOn.collect { it.id }
     }
 	
+    SwitchesOnArmed?.each() { 
+       	it.on()
+	}
     /* turn on and set color to hues */
   	sendColor()
-    settings.cameras*.take()
+	settings.cameras*.take()
 
     if (settings.helloHomeAction) {
-        log.info "Executing HelloHome action '${settings.helloHomeAction}'"
+        //log.info "Executing HelloHome action '${settings.helloHomeAction}'"
         location.helloHome.execute(settings.helloHomeAction)
     }
 
@@ -1908,54 +1968,14 @@ def activateAlarm() {
     notifyVoice()
    	history(msg)
    
-	//CHIPW: turn OFF alarm and reset after 2 hours
+	//turn OFF alarm and reset after 2 hours
     myRunIn(7200, reset)
     
 }
- 
-//CHIPW: not sure what the following func is for since it was not called. probably WIP?
-/*
-def activateAlarmPostDelay(String lastAlertType)
-{
-// no alarm check here as if door opens only for second with delay and system is not disarmed
-// we still want alarm even if door is closed after delay.. Basically like real alarm the delay is only
-// to disarm the system. Otherwise someone can open door come in, quickly close and there is not alarm LGK.
 
-// issue here is that after delay we could have lost the alert type so pass it in
- 	log.debug "activate alarm post delay check - alert type = $lastAlertType"
- 
- 	activateSirenAfterCheck(lastAlertType)
- 
-    // Only turn on those switches that are currently off
-    def switchesOn = settings.switches?.findAll { it?.currentSwitch == "off" }
-    LOG("switchesOn: ${switchesOn}")
-    if (switchesOn) {
-        switchesOn*.on()
-        state.offSwitches = switchesOn.collect { it.id }
-    }
-
-    settings.cameras*.take()
-
-    if (settings.helloHomeAction) {
-        log.info "Executing HelloHome action '${settings.helloHomeAction}'"
-        location.helloHome.execute(settings.helloHomeAction)
-    }
-
-    def msg = "Alarm at ${location.name}!"
-    state.alarms.each() {
-        msg += "\n${it}"
-    }
-
-    notify(msg)
-    notifyVoice()
-
-    reportStatus()
-    
-    myRunIn(180, reset)
-}*/
 
 private def notify(msg) {
-    LOG("notify(${msg})")
+    //LOG("notify(${msg})")
 
     log.info msg
 
@@ -1966,12 +1986,13 @@ private def notify(msg) {
         } else {
             sendNotificationEvent(msg)
         }
-
+        
+        if (settings.smsAlarmPhone1) {
         if (settings.smsAlarmPhone1 && settings.phone1) {
             sendSms(phone1, msg)
         }
 
-        if (settings.smsAlarmPhone2 && settings.phone2) {
+		if (settings.smsAlarmPhone2 && settings.phone2) {
             sendSms(phone2, msg)
         }
 
@@ -1981,6 +2002,7 @@ private def notify(msg) {
 
         if (settings.smsAlarmPhone4 && settings.phone4) {
             sendSms(phone4, msg)
+        }
         }
 
         if (settings.pushbulletAlarm && settings.pushbullet) {
@@ -1993,6 +2015,7 @@ private def notify(msg) {
         } else {
             sendNotificationEvent(msg)
         }
+        if (settings.smsStatusPhone1) {
         if (settings.smsStatusPhone1 && settings.phone1) {
             sendSms(phone1, msg)
         }
@@ -2008,7 +2031,8 @@ private def notify(msg) {
         if (settings.smsStatusPhone4 && settings.phone4) {
             sendSms(phone4, msg)
         }
-
+        }
+		
         if (settings.pushbulletStatus && settings.pushbullet) {
             settings.pushbullet*.push(location.name, msg)
         }
@@ -2016,7 +2040,7 @@ private def notify(msg) {
 }
 
 private def notifyVoice() {
-    LOG("notifyVoice()")
+    //LOG("notifyVoice()")
 
     if (!settings.audioPlayer) {
         return
@@ -2050,8 +2074,8 @@ private def notifyVoice() {
 
 def reportStatus()
 {
-    log.debug "in report status"
-    log.debug "notification device = ${settings.notificationDevice}"
+    //log.debug "in report status"
+    //log.debug "notification device = ${settings.notificationDevice}"
 
     if (settings.notificationDevice)
     {
@@ -2060,7 +2084,7 @@ def reportStatus()
         {
             phrase = "Alert: Alarm at ${location.name}!"
             notificationDevice.deviceNotification(phrase)
-            log.debug "sending notification alert: = $phrase"
+            //log.debug "sending notification alert: = $phrase"
             def zones = "Zones: "
             state.alarms.each()
             {
@@ -2070,7 +2094,7 @@ def reportStatus()
                 zones += " $it" +"\n"
             }
             notificationDevice.deviceNotification(zones)
-            log.debug "sending nofication zones = $zones" 
+            //log.debug "sending nofication zones = $zones" 
                 
             // send zone type
             phrase = "AlertType: "
@@ -2079,7 +2103,7 @@ def reportStatus()
                 atype = "None"
             phrase += " $atype"
             notificationDevice.deviceNotification(phrase)
-            log.debug "sending nofication alert type = $phrase" 
+            //log.debug "sending nofication alert type = $phrase" 
         }
         else
         {
@@ -2091,14 +2115,14 @@ def reportStatus()
             } else {
                 phrase += "Disarmed"
             }
-            log.debug "sending notification status = $phrase"
+            //log.debug "sending notification status = $phrase"
         notificationDevice.deviceNotification(phrase)
        }
     }
  }
 
 private def history(String event, String description = "") {
-    LOG("history(${event}, ${description})")
+    //LOG("history(${event}, ${description})")
 
     def history = atomicState.history
     history << [time: now(), event: event, description: description]
@@ -2107,12 +2131,12 @@ private def history(String event, String description = "") {
         history = history[1..-1]
     }
 
-    LOG("history: ${history}")
+    //LOG("history: ${history}")
     state.history = history
 }
 
 private def getStatusPhrase() {
-    LOG("getStatusPhrase()")
+    //LOG("getStatusPhrase()")
 
     def phrase = ""
     if (state.alarms.size()) {
@@ -2237,7 +2261,7 @@ private def myRunIn(delay_s, func) {
     if (delay_s > 0) {
         def date = new Date(now() + (delay_s * 1000))
         runOnce(date, func)
-        LOG("scheduled '${func}' to run at ${date}")
+        //LOG("scheduled '${func}' to run at ${date}")
     }
 }
 
@@ -2251,7 +2275,7 @@ private def mySendPush(msg) {
 }
 
 private def getVersion() {
-    return "2.4.7"
+    return "2.4.8"
 }
 
 private def textCopyright() {
@@ -2273,7 +2297,7 @@ private def textLicense() {
 }
 
 private def LOG(message) {
-    log.trace message
+    //log.trace message
 }
 
 private def STATE() {
@@ -2283,7 +2307,7 @@ private def STATE() {
 def alarmStatusHandler(evt) {
   
     //LOG("Current SHM status: '${location.currentState("alarmSystemStatus")?.value}'")
-    LOG("Alarm System Status has been changed to '${evt.value}'")
+    //LOG("Alarm System Status has been changed to '${evt.value}'")
   
   	if (settings.SyncWithSHM == true) {
     
@@ -2354,7 +2378,7 @@ def sendColor() {
     if (settings.IntrusionHueColor == null)
     	settings.IntrusionHueColor = "Disabled"
       
-      log.debug "in notify atype = $atype"
+      //log.debug "in notify atype = $atype"
       
 	def color
     if (atype == "smoke")
@@ -2364,7 +2388,7 @@ def sendColor() {
     else color = settings.IntrusionHueColor
     
     
-	log.debug "in notify by color color = $color"
+	//log.debug "in notify by color color = $color"
     
 	//Set the hue and saturation for the specified color.
     if (color != "Disabled")
