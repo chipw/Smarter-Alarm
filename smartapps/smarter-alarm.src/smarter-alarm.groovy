@@ -361,7 +361,7 @@ def pageSelectZones() {
     ]
 
     return dynamicPage(pageProperties) {
-        section("Add/Remove Zones (for Sensors)") {
+        section("Add/Remove Zones (Sensors)") {
             paragraph helpPage
             input inputContact
             input inputMotion
@@ -510,6 +510,30 @@ def pageArmingOptions() {
         multiple:   true,
         required:   false
     ]
+    
+    def inputAwayModeHub = [
+        name:       "awayModeHub",
+        type:       "mode",
+        title:      "Set Hub Mode to this when Armed/Away",
+        multiple:   false,
+        required:   false
+    ]
+
+    def inputStayModeHub = [
+        name:       "stayModeHub",
+        type:       "mode",
+        title:      "Set Hub Mode to this when Armed/Stay",
+        multiple:   false,
+        required:   false
+    ]
+
+    def inputDisarmModeHub = [
+        name:       "disarmModeHub",
+        type:       "mode",
+        title:      "Set Hub Mode to this when Disarmed",
+        multiple:   false,
+        required:   false
+    ]    
 
     def inputDelay = [
         name:       "delay",
@@ -541,6 +565,7 @@ def pageArmingOptions() {
         type:			"bool",
         title:			"Sync status with Smart Home Monitor",
         defaultValue: 	true,
+        submitOnChange:	true,
         required:		true
     ]    
         
@@ -583,7 +608,9 @@ def pageArmingOptions() {
 		section("Sync status with Smart Home Monitor (SHM)") {
         	input inputSyncWithSHM
             input inputTriggerSHM
-            input inputVirtualswitchSHM
+            if (TriggerSHM) {
+            	input inputVirtualswitchSHM
+            }
         }
 
 		section("Keypads") {
@@ -601,7 +628,13 @@ def pageArmingOptions() {
 			input inputExitDelayStay
         }
 
-		section("Auto Arm/Disarm from Hub Modes (Optional)") {
+		section("Set Hub Mode based on Arm/Disarm status") {
+            input inputAwayModeHub
+            input inputStayModeHub
+            input inputDisarmModeHub
+        }
+
+		section("Auto Arm/Disarm when Hub Modes change (Optional)") {
             input inputAwayModes
             input inputStayModes
             input inputDisarmModes
@@ -1593,6 +1626,10 @@ def armAway() {
     if (!atomicState.armed || atomicState.stay) {
         armPanel(false)
     	sendLocationEvent(name: "alarmSystemStatus", value: "away")
+        
+        if (settings.awayModeHub) {
+       		setLocationMode(settings.awayModeHub)
+        }
     }
 	
     reportStatus()
@@ -1605,6 +1642,11 @@ def armStay() {
     if (!atomicState.armed || !atomicState.stay) {
         armPanel(true)
     	sendLocationEvent(name: "alarmSystemStatus", value: "stay")
+        
+        if (settings.stayModeHub) {
+       		setLocationMode(settings.stayModeHub)
+        }
+        
     }
 	
 	reportStatus()
@@ -1651,6 +1693,10 @@ def disarm() {
 		}
 
 		sendLocationEvent(name: "alarmSystemStatus", value: "off")
+		
+        if (settings.disarmModeHub) {
+       		setLocationMode(settings.disarmModeHub)
+        }
 
 		reset()
         
