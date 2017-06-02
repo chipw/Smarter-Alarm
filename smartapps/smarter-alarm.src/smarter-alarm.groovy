@@ -46,6 +46,28 @@ definition(
     oauth: [displayName:"Smarter Alarm", displayLink:"http://www.smartthings.com"]
 )
 
+private def getVersion() {
+    return "2.6.2"
+}
+
+private def textCopyright() {
+    def text = "Copyright © 2017 Statusbits.com + CHIPW"
+}
+
+private def textLicense() {
+    def text =
+        "This program is free software: you can redistribute it and/or " +
+        "modify it under the terms of the GNU General Public License as " +
+        "published by the Free Software Foundation, either version 3 of " +
+        "the License, or (at your option) any later version.\n\n" +
+        "This program is distributed in the hope that it will be useful, " +
+        "but WITHOUT ANY WARRANTY; without even the implied warranty of " +
+        "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU " +
+        "General Public License for more details.\n\n" +
+        "You should have received a copy of the GNU General Public License " +
+        "along with this program. If not, see <http://www.gnu.org/licenses/>."
+}
+
 preferences {
     page name:"pageSetup"
     page name:"pageAbout"
@@ -817,8 +839,8 @@ def pageNotifications() {
         "disarmed or when an alarm is set off. Notifications can be send " +
         "using either Push messages, SMS (text) messages and Pushbullet " +
         "messaging service. Smarter Alarm can also notify you with sounds " +
-        "or voice alerts using compatible audio devices, such as Sonos." +
-        "Or using a SmartAlarm dashboard virtual device."
+        "or voice alerts using compatible audio devices, such as Sonos. " +
+        "Or using a Smarter Alarm dashboard virtual device."
     
     def inputNotificationDevice = [
         name:       "notificationDevice",
@@ -2371,28 +2393,6 @@ private def mySendPush(msg) {
     } catch (e) {
         log.error e
     }
-}
-
-private def getVersion() {
-    return "2.4.8"
-}
-
-private def textCopyright() {
-    def text = "Copyright © 2017 Statusbits.com + CHIPW"
-}
-
-private def textLicense() {
-    def text =
-        "This program is free software: you can redistribute it and/or " +
-        "modify it under the terms of the GNU General Public License as " +
-        "published by the Free Software Foundation, either version 3 of " +
-        "the License, or (at your option) any later version.\n\n" +
-        "This program is distributed in the hope that it will be useful, " +
-        "but WITHOUT ANY WARRANTY; without even the implied warranty of " +
-        "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU " +
-        "General Public License for more details.\n\n" +
-        "You should have received a copy of the GNU General Public License " +
-        "along with this program. If not, see <http://www.gnu.org/licenses/>."
 }
 
 private def LOG(message) {
