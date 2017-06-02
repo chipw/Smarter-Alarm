@@ -869,6 +869,7 @@ def pageNotifications() {
         name:           "phone1",
         type:           "phone",
         title:          "Send to this number",
+        submitOnChange:	true,
         required:       false
     ]
 
@@ -876,6 +877,7 @@ def pageNotifications() {
         name:           "smsAlarmPhone1",
         type:           "bool",
         title:          "Notify on Alarm",
+        submitOnChange:	true,
         defaultValue:   false
     ]
 
@@ -883,6 +885,7 @@ def pageNotifications() {
         name:           "smsStatusPhone1",
         type:           "bool",
         title:          "Notify on Status Change",
+        submitOnChange:	true,
         defaultValue:   false
     ]
 
@@ -955,6 +958,7 @@ def pageNotifications() {
         type:           "device.pushbullet",
         title:          "Which Pushbullet devices?",
         multiple:       true,
+        submitOnChange:	true,
         required:       false
     ]
 
@@ -977,6 +981,7 @@ def pageNotifications() {
         type:           "capability.musicPlayer",
         title:          "Which audio players?",
         multiple:       true,
+        submitOnChange:	true,
         required:       false
     ]
 
@@ -1033,31 +1038,27 @@ def pageNotifications() {
         section("Notification Options") {
             paragraph helpAbout
         }
-        section("Notification Device")
+        section("Use Sirens for Alarms")
         {
-            input inputNotificationDevice
+            input inputSirenOnWaterAlert
+            input inputSirenOnSmokeAlert
+            input inputSirenOnIntrusionAlert
         }
         section("Chime Devices") {
 			input inputChimeDevices
             input inputChimeOnStatusChange
         }
         if (ChimeOnStatusChange == true) {
-        section("Quiet hours (do not Chime for Arm/Disarm Update)") {
+        section("Quiet Hours (do not Chime for Arm/Disarm Change)") {
         	input "QuietfromTime", "time", title: "From", required: true
         	input "QuiettoTime", "time", title: "To", required: true
         }
 		}
-        section("Siren Notifcations for Alarms")
-        {
-            input inputSirenOnWaterAlert
-            input inputSirenOnSmokeAlert
-            input inputSirenOnIntrusionAlert
-        }
         section("Push Notifications") {
             input inputPushAlarm
             input inputPushStatus
         }
-        section("Text Message (SMS) #1") {
+        section("Text Message (SMS)") {
             input inputPhone1
             input inputPhone1Alarm
             input inputPhone1Status
@@ -1081,17 +1082,25 @@ def pageNotifications() {
         }
         section("Pushbullet Notifications") {
             input inputPushbulletDevice
+            if (pushbullet) {
             input inputPushbulletAlarm
             input inputPushbulletStatus
+            }
         }
         section("Audio Notifications") {
             input inputAudioPlayers
+            if (audioPlayer) {
             input inputSpeechOnAlarm
             input inputSpeechOnStatus
             input inputSpeechTextAlarm
             input inputSpeechTextArmedAway
             input inputSpeechTextArmedStay
             input inputSpeechTextDisarmed
+            }
+        }
+        section("Notification Device")
+        {
+            input inputNotificationDevice
         }
     }
 }
