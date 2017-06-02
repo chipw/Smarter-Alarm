@@ -7,7 +7,7 @@
  *  Please visit <http://statusbits.github.io/smartalarm/> for more
  *  information.
  *
- *  Version 2.6.1 (6/1/2017)
+ *  Version 2.6.2 (6/2/2017)
  *
  *  The latest version of this file can be found on GitHub at:
  *  <https://github.com/statusbits/smartalarm/blob/master/SmartAlarm.groovy>
@@ -538,6 +538,22 @@ def pageArmingOptions() {
         required:   false
     ]    
 
+    def inputExitEntryModeHub = [
+        name:       "exitentryModeHub",
+        type:       "mode",
+        title:      "Set Hub Mode to this when Exit or Entry Delay",
+        multiple:   false,
+        required:   false
+    ]    
+
+    def inputAlarmModeHub = [
+        name:       "alarmModeHub",
+        type:       "mode",
+        title:      "Set Hub Mode to this when Alarm activated",
+        multiple:   false,
+        required:   false
+    ]    
+
     def inputDelay = [
         name:       "delay",
         type:       "enum",
@@ -620,6 +636,8 @@ def pageArmingOptions() {
             input inputAwayModeHub
             input inputStayModeHub
             input inputDisarmModeHub
+            input inputExitEntryModeHub
+            input inputAlarmModeHub
         }
 
 		section("Keypads") {
@@ -1587,6 +1605,11 @@ private def onZoneEvent(evt, sensorType) {
 			if (atomicState.entrydelay == false) {
             	atomicState.entrydelay = true
             	keypads?.each() { it.setEntryDelay(state.delay) }
+    			
+                if (settings.exitentryModeHub) {
+    				setLocationMode(settings.exitentryModeHub)
+    			}                
+                
 	            myRunIn(state.delay, activateAlarm)
             }
         }
@@ -1965,6 +1988,10 @@ def activateAlarm() {
     }
 
 	history("Alarm", "Alarm Triggered")
+
+    if (settings.alarmModeHub) {
+    	setLocationMode(settings.alarmModeHub)
+    }
 
     if(settings.sirenEntryStrobe)
     {
