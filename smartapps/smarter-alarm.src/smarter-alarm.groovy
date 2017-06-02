@@ -7,7 +7,7 @@
  *  Please visit <http://statusbits.github.io/smartalarm/> for more
  *  information.
  *
- *  Version 2.4.8 (5/23/2017)
+ *  Version 2.6.1 (6/1/2017)
  *
  *  The latest version of this file can be found on GitHub at:
  *  <https://github.com/statusbits/smartalarm/blob/master/SmartAlarm.groovy>
@@ -33,13 +33,13 @@
 import groovy.json.JsonSlurper
 
 definition(
-    name: "Smarter Alarm+SHM",
+    name: "Smarter Alarm",
     namespace: "chipw",
     author: "chip.warner@gmail.com",
     description: '''A multi-zone virtual alarm panel, featuring customizable\
  security zones. Setting of an alarm can activate sirens, turn on light\
  switches, push notification and text message. Alarm is armed and disarmed\
- simply by setting Smart Home Monitor 'status' AND/OR Hub 'Mode'.''',
+ simply by setting Smart Home Monitor 'status' OR Hub 'Mode'.''',
     category: "Safety & Security",
     iconUrl: "http://statusbits.github.io/icons/SmartAlarm-128.png",
     iconX2Url: "http://statusbits.github.io/icons/SmartAlarm-256.png",
@@ -107,7 +107,7 @@ def pageSetup() {
         return pageSelectZones()
     }
 
-    def alarmStatus = "Alarm is ${getAlarmStatus()}"
+    def alarmStatus = "Alarm is ${getAlarmStatus()} in ${getHubMode()} mode"
 
     def pageProperties = [
         name:       "pageSetup",
@@ -129,17 +129,19 @@ def pageSetup() {
             }
         }
         section("Setup Menu") {
-            href "pageSelectZones", title:"Add/Remove Sensors", description:"Tap to open"
-            href "pageConfigureZones", title:"Configure Zones (for Sensors)", description:"Tap to open"
-            href "pageArmingOptions", title:"Arming/Disarming Options", description:"Tap to open"
-            href "pageAlarmOptions", title:"Alarm Options", description:"Tap to open"
-            href "pageNotifications", title:"Notification Options", description:"Tap to open"
-            href "pageRemoteOptions", title:"Remote Control Options", description:"Tap to open"
-            href "pageRestApiOptions", title:"REST API Options", description:"Tap to open"
-            href "pageAbout", title:"About Smarter Alarm", description:"Tap to open"
+            href "pageSelectZones", title:"Add/Remove Sensors", description:""
+            href "pageConfigureZones", title:"Configure Zones (for Sensors)", description:""
+            href "pageArmingOptions", title:"Arming/Disarming Options", description:""
+            href "pageAlarmOptions", title:"Alarm Options", description:""
+            href "pageNotifications", title:"Notification Options", description:""
         }
-        section([title:"Options", mobileOnly:true]) {
-            label title:"Assign a name", required:false
+		section("About") {
+            href "pageAbout", title:"About Smarter Alarm", description:""
+   	    }
+        section(hideable: true, hidden: true, "Advanced") {
+            href "pageRemoteOptions", title:"Remote Control Options", description:""
+            href "pageRestApiOptions", title:"REST API Options", description:""
+       	    label title:"Assign a name", required:false
         }
     }
 }
@@ -151,13 +153,13 @@ def pageAbout() {
     def textAbout =
         "Version ${getVersion()}\n${textCopyright()}\n\n" +
         "You can contribute to the development of this app by making " +
-        "donation to geko@statusbits.com via PayPal."
+        "donation to the project."
 
     def hrefInfo = [
-        url:        "http://statusbits.github.io/smartalarm/",
+        url:        "https://github.com/chipw/Smarter-Alarm",
         style:      "embedded",
         title:      "Tap here for more information...",
-        description:"http://statusbits.github.io/smartalarm/",
+        description:"https://github.com/chipw/Smarter-Alarm",
         required:   false
     ]
 
@@ -219,6 +221,7 @@ def pageStatus() {
     return dynamicPage(pageProperties) {
         section("Status") {
             paragraph "Alarm is ${getAlarmStatus()}"
+            paragraph "Hub Mode is ${getHubMode()}"
         }
 
         if (settings.z_contact) {
@@ -565,22 +568,22 @@ def pageArmingOptions() {
         type:			"bool",
         title:			"Sync status with Smart Home Monitor",
         defaultValue: 	true,
-        submitOnChange:	true,
         required:		true
     ]    
         
 	def inputTriggerSHM = [
     	name:			"TriggerSHM",
         type:			"bool",
-        title:			"Use V.Sensor to trigger SHM ALARM",
+        title:			"Trigger SHM ALARM using Sensor",
         defaultValue: 	false,
+        submitOnChange:	true,
         required:		true
     ]    
 
 	def inputVirtualswitchSHM = [
     	name:		"VirtualswitchSHM",
         type: 		"capability.doorControl",
-        title: 		"Select Virtual Door Sensor for SHM ALARM",
+        title: 		"Virtual Door Sensor for SHM ALARM trigger",
         multiple:	false,
         required:	false
     ]
@@ -605,27 +608,12 @@ def pageArmingOptions() {
             paragraph helpArming
         }
 
-		section("Sync status with Smart Home Monitor (SHM)") {
+		section("Sync 'armed' status with Smart Home Monitor (SHM)") {
         	input inputSyncWithSHM
             input inputTriggerSHM
             if (TriggerSHM) {
             	input inputVirtualswitchSHM
             }
-        }
-
-		section("Keypads") {
-        	input inputKeypads
-        }
-        
-        section("Toggle Switches: Armed=ON, Disarmed=OFF") {
-			input inputSwitchesOnArmed
-        }    
-
-        section("Exit and Entry Delay") {
-            paragraph helpDelay
-            input inputDelay
-            input inputDelayStay
-			input inputExitDelayStay
         }
 
 		section("Set Hub Mode based on Arm/Disarm status") {
@@ -634,7 +622,22 @@ def pageArmingOptions() {
             input inputDisarmModeHub
         }
 
-		section("Auto Arm/Disarm when Hub Modes change (Optional)") {
+		section("Keypads") {
+        	input inputKeypads
+        }
+
+		section("Exit and Entry Delay") {
+            paragraph helpDelay
+            input inputDelay
+            input inputDelayStay
+			input inputExitDelayStay
+        }
+        
+        section("Switches: Armed=ON, Disarmed=OFF") {
+			input inputSwitchesOnArmed
+        }    
+        
+		section(hideable: true, hidden: true, "Auto Arm/Disarm when Hub Modes change (Optional)") {
             input inputAwayModes
             input inputStayModes
             input inputDisarmModes
@@ -688,6 +691,7 @@ def inputHues = [
             type: "capability.colorControl",
             title: "Which hue bulbs?",
             multiple: true,
+        	submitOnChange:	true,            
             required: false
      ]
        
@@ -760,27 +764,29 @@ def inputIntrusionHueColor = [
         section("Alarm Options") {
             paragraph helpAlarm
         }
-        section("Sirens") {
+        section("Sirens for Alarm") {
             input inputAlarms
             input inputSirenMode
             input inputSirenEntryStrobe
         }
-        section("Switches") {
+        section("Switches: Alarm=ON, No Alarms=OFF") {
             input inputSwitches
         }
-        section("Hues") {
-        	input inputHues
-            input inputWaterHueColor
-            input inputSmokeHueColor
-            input inputIntrusionHueColor
-            input inputHueBrightness
-        }        
         section("Cameras") {
             input inputCameras
         }
         section("'Hello, Home' Actions") {
             input inputHelloHome
         }
+        section("Hues") {
+        	input inputHues
+            if (hues) {
+            input inputWaterHueColor
+            input inputSmokeHueColor
+            input inputIntrusionHueColor
+            input inputHueBrightness
+            }
+        }        
     }
 }
 
@@ -884,6 +890,7 @@ def pageNotifications() {
         name:           "phone2",
         type:           "phone",
         title:          "Send to this number",
+        submitOnChange:	true,
         required:       false
     ]
 
@@ -1040,7 +1047,7 @@ def pageNotifications() {
         	input "QuiettoTime", "time", title: "To", required: true
         }
 		}
-        section("Siren Notifcations")
+        section("Siren Notifcations for Alarms")
         {
             input inputSirenOnWaterAlert
             input inputSirenOnSmokeAlert
@@ -1055,6 +1062,7 @@ def pageNotifications() {
             input inputPhone1Alarm
             input inputPhone1Status
         }
+        if (phone1) {
         section("Text Message (SMS) #2") {
             input inputPhone2
             input inputPhone2Alarm
@@ -1069,6 +1077,7 @@ def pageNotifications() {
             input inputPhone4
             input inputPhone4Alarm
             input inputPhone4Status
+        }
         }
         section("Pushbullet Notifications") {
             input inputPushbulletDevice
@@ -2219,6 +2228,14 @@ private def getAlarmStatus() {
     }
 
     return alarmStatus
+}
+
+private def getHubMode() {
+    def hubMode
+
+	hubMode = location.mode
+
+	return hubMode
 }
 
 private def getZoneStatus(device, sensorType) {
