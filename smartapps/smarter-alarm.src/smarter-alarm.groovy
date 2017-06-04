@@ -7,7 +7,7 @@
  *  Please visit <http://statusbits.github.io/smartalarm/> for more
  *  information.
  *
- *  Version 2.6.2 (6/2/2017)
+ *  Version 2.6.3 (6/4/2017)
  *
  *  The latest version of this file can be found on GitHub at:
  *  <https://github.com/statusbits/smartalarm/blob/master/SmartAlarm.groovy>
@@ -47,7 +47,7 @@ definition(
 )
 
 private def getVersion() {
-    return "2.6.2"
+    return "2.6.3"
 }
 
 private def textCopyright() {
@@ -606,6 +606,7 @@ def pageArmingOptions() {
         type:			"bool",
         title:			"Sync status with Smart Home Monitor",
         defaultValue: 	true,
+        submitOnChange:	true,
         required:		true
     ]    
         
@@ -629,11 +630,28 @@ def pageArmingOptions() {
     def inputSwitchesOnArmed = [
         name:           "SwitchesOnArmed",
         type:           "capability.switch",
-        title:          "Which switches?",
+        title:          "Set switches: Armed=ON, Disarmed=OFF",
         multiple:       true,
         required:       false
-    ]    
+    ]        
+        
+    def inputChimeDevices = [
+    	name:			"chimeDevices",
+        type:           "capability.tone",
+        title:          "Which Chime Devices?",
+        multiple:       true,
+        required:       false
+    ]
 
+    def inputChimeOnStatusChange = [
+    	name:			"ChimeOnStatusChange",
+        type:			"bool",
+        title:			"Chime on Arm/Disarm Update",
+        defaultValue: 	true,
+        submitOnChange:	true,
+        required:		true
+    ]    
+    
     def pageProperties = [
         name:       "pageArmingOptions",
         //title:      "Arming/Disarming Options",
@@ -672,12 +690,22 @@ def pageArmingOptions() {
             input inputDelayStay
 			input inputExitDelayStay
         }
+        section("Chime Devices") {
+			input inputChimeDevices
+            input inputChimeOnStatusChange
+        }
+        if (ChimeOnStatusChange == true) {
+        section("Quiet Hours (do not Chime for Arm/Disarm Change)") {
+        	input "QuietfromTime", "time", title: "From", required: true
+        	input "QuiettoTime", "time", title: "To", required: true
+        }
+		}
         
-        section("Switches: Armed=ON, Disarmed=OFF") {
+		section("Switches") {
 			input inputSwitchesOnArmed
-        }    
+        }        
         
-		section(hideable: true, hidden: true, "Auto Arm/Disarm when Hub Modes change (Optional)") {
+		section(hideable: true, hidden: settings.SyncWithSHM, (settings.SyncWithSHM) ? "Auto Arm/Disarm when Hub Modes change (Caution: Dont Use This When Using SHM Sync)" : "Auto Arm/Disarm when Hub Modes change (Optional)") {
             input inputAwayModes
             input inputStayModes
             input inputDisarmModes
@@ -699,6 +727,7 @@ def pageAlarmOptions() {
         type:           "capability.alarm",
         title:          "Which sirens?",
         multiple:       true,
+        submitOnChange:	true,
         required:       false
     ]
 
@@ -717,12 +746,45 @@ def pageAlarmOptions() {
         defaultValue:   true,
         required:       true
     ]
+    
+   def inputSirenOnWaterAlert = [
+        name:       "sirenOnWaterAlert",
+        type:       "bool",
+        title:      "Use Siren for Water Leak?",
+        defaultValue: true,
+        required:   true
+    ]
+     
+   def inputSirenOnSmokeAlert = [
+        name:       "sirenOnSmokeAlert",
+        type:       "bool",
+        title:      "Use Siren for Smoke Alert?",
+        defaultValue: true,
+        required:   true
+    ]
+    
+   def inputSirenOnIntrusionAlert = [
+        name:       "sirenOnIntrusionAlert",
+        type:       "bool",
+        title:      "Use Siren for Intrusion Alarm?",
+        defaultValue: true,
+        required:   true
+    ]
 
-    def inputSwitches = [
-        name:           "switches",
-        type:           "capability.switch",
-        title:          "Which switches?",
+    def inputCameras = [
+        name:           "cameras",
+        type:           "capability.imageCapture",
+        title:          "Which cameras?",
         multiple:       true,
+        required:       false
+    ]
+
+    def hhActions = getHelloHomeActions()
+    def inputHelloHome = [
+        name:           "helloHomeAction",
+        type:           "enum",
+        title:          "Which 'Hello, Home' action?",
+        metadata:       [values: hhActions],
         required:       false
     ]
 
@@ -776,22 +838,13 @@ def inputIntrusionHueColor = [
    	 required:false, defaultValue:100 
    ]
 
-    def inputCameras = [
-        name:           "cameras",
-        type:           "capability.imageCapture",
-        title:          "Which cameras?",
+def inputSwitches = [
+        name:           "switches",
+        type:           "capability.switch",
+        title:          "Set switches: Alarm=ON, No Alarms=OFF",
         multiple:       true,
         required:       false
-    ]
-
-    def hhActions = getHelloHomeActions()
-    def inputHelloHome = [
-        name:           "helloHomeAction",
-        type:           "enum",
-        title:          "Which 'Hello, Home' action?",
-        metadata:       [values: hhActions],
-        required:       false
-    ]
+    ]        
 
     def pageProperties = [
         name:       "pageAlarmOptions",
@@ -804,13 +857,15 @@ def inputIntrusionHueColor = [
         section("Alarm Options") {
             paragraph helpAlarm
         }
-        section("Sirens for Alarm") {
+        section("Sirens for Alarms") {
             input inputAlarms
             input inputSirenMode
             input inputSirenEntryStrobe
-        }
-        section("Switches: Alarm=ON, No Alarms=OFF") {
-            input inputSwitches
+            if (inputAlarms) {
+            input inputSirenOnWaterAlert
+            input inputSirenOnSmokeAlert
+            input inputSirenOnIntrusionAlert
+            }
         }
         section("Cameras") {
             input inputCameras
@@ -818,7 +873,7 @@ def inputIntrusionHueColor = [
         section("'Hello, Home' Actions") {
             input inputHelloHome
         }
-        section("Hues") {
+        section("Hues (Colored Light Bulbs)") {
         	input inputHues
             if (hues) {
             input inputWaterHueColor
@@ -826,6 +881,9 @@ def inputIntrusionHueColor = [
             input inputIntrusionHueColor
             input inputHueBrightness
             }
+        }
+		section("Switches") {
+            input inputSwitches
         }        
     }
 }
@@ -848,47 +906,6 @@ def pageNotifications() {
         title:      "Which Smarter Alarm notification device?",
         multiple:   false,
         required:   false
-    ]
-
-    def inputChimeDevices = [
-    	name:			"chimeDevices",
-        type:           "capability.tone",
-        title:          "Which Chime Devices?",
-        multiple:       true,
-        required:       false
-    ]
-
-    def inputChimeOnStatusChange = [
-    	name:			"ChimeOnStatusChange",
-        type:			"bool",
-        title:			"Chime on Arm/Disarm Update",
-        defaultValue: 	true,
-        submitOnChange:	true,
-        required:		true
-    ]    
-
-   def inputSirenOnWaterAlert = [
-        name:       "sirenOnWaterAlert",
-        type:       "bool",
-        title:      "Use Siren for Water Leak?",
-        defaultValue: true,
-        required:   true
-    ]
-     
-   def inputSirenOnSmokeAlert = [
-        name:       "sirenOnSmokeAlert",
-        type:       "bool",
-        title:      "Use Siren for Smoke Alert?",
-        defaultValue: true,
-        required:   true
-    ]
-    
-   def inputSirenOnIntrusionAlert = [
-        name:       "sirenOnIntrusionAlert",
-        type:       "bool",
-        title:      "Use Siren for Intrusion Alert?",
-        defaultValue: true,
-        required:   true
     ]
 
     def inputPushAlarm = [
@@ -1066,6 +1083,7 @@ def pageNotifications() {
         title:          "Disarmed Phrase",
         required:       false
     ]
+    
 
     def pageProperties = [
         name:       "pageNotifications",
@@ -1078,22 +1096,6 @@ def pageNotifications() {
         section("Notification Options") {
             paragraph helpAbout
         }
-        section("Use Sirens for Alarms")
-        {
-            input inputSirenOnWaterAlert
-            input inputSirenOnSmokeAlert
-            input inputSirenOnIntrusionAlert
-        }
-        section("Chime Devices") {
-			input inputChimeDevices
-            input inputChimeOnStatusChange
-        }
-        if (ChimeOnStatusChange == true) {
-        section("Quiet Hours (do not Chime for Arm/Disarm Change)") {
-        	input "QuietfromTime", "time", title: "From", required: true
-        	input "QuiettoTime", "time", title: "To", required: true
-        }
-		}
         section("Push Notifications") {
             input inputPushAlarm
             input inputPushStatus
@@ -1142,6 +1144,7 @@ def pageNotifications() {
         {
             input inputNotificationDevice
         }
+
     }
 }
 
@@ -2429,29 +2432,6 @@ def alarmStatusHandler(evt) {
     } 
 	}
 }
-
-/*  def setAlarmMode(name) {
-    LOG("Alarm System Status will be set to '${name}'")
-    def event = [
-        name: "alarmSystemStatus",
-        value: name,
-        isStateChange: true,
-        displayed: true,
-        description: "alarm system status is ${name}",
-    ]
-    sendLocationEvent(event)
-}
-
-private sendSHMEvent(String shmState) {
-  def event = [
-        name:"alarmSystemStatus",
-        value: shmState,
-        displayed: true,
-        description: "System Status is ${shmState}"
-      ]
-  log.debug "test ${event}"
-  sendLocationEvent(event)
-} */
 
 def sendColor() {
 	//Initialize the hue and saturation
