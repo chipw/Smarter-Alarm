@@ -7,7 +7,7 @@
  *  Please visit <http://statusbits.github.io/smartalarm/> for more
  *  information.
  *
- *  Version 2.6.3 (6/4/2017)
+ *  Version 2.6.4 (6/21/2017)
  *
  *  The latest version of this file can be found on GitHub at:
  *  <https://github.com/statusbits/smartalarm/blob/master/SmartAlarm.groovy>
@@ -47,7 +47,7 @@ definition(
 )
 
 private def getVersion() {
-    return "2.6.3"
+    return "2.6.4"
 }
 
 private def textCopyright() {
@@ -79,6 +79,15 @@ preferences {
     page name:"pageArmingOptions"
     page name:"pageAlarmOptions"
     page name:"pageNotifications"
+	page(name: "pagePB", title: "Pushbullet Configuration", nextPage: "pageNotifications") {
+	section("Pushbullet Devices") {
+        	input(name: "pushbullets", type: "device.pushbullet", title: "Which Pushbullet devices?", multiple: true, submitOnChange: true, required: false)
+    }
+	section("Pushbullet Notifications") {
+			input(name: "pushbulletAlarm", type: "bool", title: "Notify on Alarm", defaultValue: true)
+			input(name: "pushbulletStatus", type: "bool", title: "Notify on Status Change", defaultValue: true)
+        }
+	}    
     page name:"pageRemoteOptions"
     page name:"pageRestApiOptions"
 }
@@ -422,7 +431,7 @@ def pageConfigureZones() {
     ]
 
     return dynamicPage(pageProperties) {
-        section("Configure Zones for Sensors") {
+        section("Configure Zones (for Sensors)") {
             paragraph helpZones
         }
 
@@ -788,56 +797,6 @@ def pageAlarmOptions() {
         required:       false
     ]
 
-def inputHues = [
-			name: "hues",
-            type: "capability.colorControl",
-            title: "Which hue bulbs?",
-            multiple: true,
-        	submitOnChange:	true,            
-            required: false
-     ]
-       
-   def colorsWithDisabled=["Disabled","Blue","Purple","Red","Pink","Orange","Yellow","Green","White"]
-  
-  
-def inputWaterHueColor = [
-        name:           "WaterHueColor",
-        type:           "enum",
-        title:          "Hue Color for Water Leak Alert?",
-        options:      	 colorsWithDisabled,
-        required:       false,
-        defaultValue: 	"Disabled",
-        multiple: 		false
-    ]
-    
-    
-def inputSmokeHueColor = [
-        name:           "SmokeHueColor",
-        type:           "enum",
-        title:          "Hue Color for Smoke/CO2 Alert?",
-        options:      	 colorsWithDisabled,
-        required:       false,
-        defaultValue: 	"Disabled",
-        multiple: 		false
-    ]
-     
-def inputIntrusionHueColor = [
-        name:           "IntrusionHueColor",
-        type:           "enum",
-        title:          "Hue Alert Color for Intrusion/Other Alert?",
-        options:      	 colorsWithDisabled,
-        required:       false,
-        defaultValue: 	"Disabled",
-        multiple: 		false
-    ]
-   
-	def inputHueBrightness = [
-  	 name: "hueBrightnessLevel", 
-  	 type: "number", 
-   	 title: "Hue Brightness Level (1-100)?", 
-   	 required:false, defaultValue:100 
-   ]
-
 def inputSwitches = [
         name:           "switches",
         type:           "capability.switch",
@@ -872,15 +831,6 @@ def inputSwitches = [
         }
         section("'Hello, Home' Actions") {
             input inputHelloHome
-        }
-        section("Hues (Colored Light Bulbs)") {
-        	input inputHues
-            if (hues) {
-            input inputWaterHueColor
-            input inputSmokeHueColor
-            input inputIntrusionHueColor
-            input inputHueBrightness
-            }
         }
 		section("Switches") {
             input inputSwitches
@@ -1010,29 +960,6 @@ def pageNotifications() {
         defaultValue:   false
     ]
 
-    def inputPushbulletDevice = [
-        name:           "pushbullet",
-        type:           "device.pushbullet",
-        title:          "Which Pushbullet devices?",
-        multiple:       true,
-        submitOnChange:	true,
-        required:       false
-    ]
-
-    def inputPushbulletAlarm = [
-        name:           "pushbulletAlarm",
-        type:           "bool",
-        title:          "Notify on Alarm",
-        defaultValue:   true
-    ]
-
-    def inputPushbulletStatus = [
-        name:           "pushbulletStatus",
-        type:           "bool",
-        title:          "Notify on Status Change",
-        defaultValue:   true
-    ]
-
     def inputAudioPlayers = [
         name:           "audioPlayer",
         type:           "capability.musicPlayer",
@@ -1084,6 +1011,75 @@ def pageNotifications() {
         required:       false
     ]
     
+	def inputHues = [
+			name: "hues",
+            type: "capability.colorControl",
+            title: "Use which hue/color light bulbs?",
+            multiple: true,
+        	submitOnChange:	true,            
+            required: false
+     ]
+       
+   def colorsWithDisabled=["Disabled","Blue","Purple","Red","Pink","Orange","Yellow","Green","White", "Daylight", "Soft White", "Warm White", "Default (Initial Color)", "[TURN OFF]"]
+  
+  
+	def inputWaterHueColor = [
+        name:           "WaterHueColor",
+        type:           "enum",
+        title:          "Color for Water Leak Alert?",
+        options:      	 colorsWithDisabled,
+        required:       false,
+        defaultValue: 	"Disabled",
+        multiple: 		false
+    ]
+    
+    
+	def inputSmokeHueColor = [
+        name:           "SmokeHueColor",
+        type:           "enum",
+        title:          "Color for Smoke/CO2 Alert?",
+        options:      	 colorsWithDisabled,
+        required:       false,
+        defaultValue: 	"Disabled",
+        multiple: 		false
+    ]
+     
+	def inputIntrusionHueColor = [
+        name:           "IntrusionHueColor",
+        type:           "enum",
+        title:          "Color for Intrusion Alarm?",
+        options:      	 colorsWithDisabled,
+        required:       false,
+        defaultValue: 	"Disabled",
+        multiple: 		false
+    ]
+
+	def inputArmedHueColor = [
+        name:           "ArmedHueColor",
+        type:           "enum",
+        title:          "Color for Armed status?",
+        options:      	 colorsWithDisabled,
+        required:       false,
+        defaultValue: 	"Disabled",
+        multiple: 		false
+    ]
+
+	def inputDisarmedHueColor = [
+        name:           "DisarmedHueColor",
+        type:           "enum",
+        title:          "Color for Disarmed status?",
+        options:      	 colorsWithDisabled,
+        required:       false,
+        defaultValue: 	"Disabled",
+        multiple: 		false
+    ]
+
+	def inputHueBrightness = [
+  	 name: "hueBrightnessLevel", 
+  	 type: "number", 
+   	 title: "Hue Brightness Level (1-100)?", 
+   	 required:false, defaultValue:100 
+   ]
 
     def pageProperties = [
         name:       "pageNotifications",
@@ -1122,13 +1118,6 @@ def pageNotifications() {
             input inputPhone4Status
         }
         }
-        section("Pushbullet Notifications") {
-            input inputPushbulletDevice
-            if (pushbullet) {
-            input inputPushbulletAlarm
-            input inputPushbulletStatus
-            }
-        }
         section("Audio Notifications") {
             input inputAudioPlayers
             if (audioPlayer) {
@@ -1140,11 +1129,29 @@ def pageNotifications() {
             input inputSpeechTextDisarmed
             }
         }
+        section("Pushbullet Notifications") {
+        	href(name: "Configure Pushbullet",
+                 title: "Configure Pushbullet",
+                 required: false,
+                 page: "pagePB")
+        }         
         section("Notification Device")
         {
             input inputNotificationDevice
         }
-
+        
+        section("Hues/Color Light Bulbs for Alarms and Status") {
+        	input inputHues
+            if (hues) {
+            input inputWaterHueColor
+            input inputSmokeHueColor
+            input inputIntrusionHueColor
+            input inputArmedHueColor
+            input inputDisarmedHueColor
+            input inputHueBrightness
+            
+            }
+        }        
     }
 }
 
@@ -1345,6 +1352,11 @@ private def setupInit() {
         state.installed = false
         state.armed = false
         state.entrydelay = false
+        state.hadalarm = false
+        state.hadalarmColor = null
+        state.ColorDefaultHue = null
+        state.ColorDefaultSaturation = null        
+        state.ColorDefaultTemperature = null                
         state.zones = []
         state.alarms = []
         state.history = []
@@ -1367,6 +1379,11 @@ private def initialize() {
     clearAlarm()
     state.delay = settings.delay?.toInteger() ?: 30
     state.offSwitches = []
+    
+    state.ColorDefaultHue = null
+    state.ColorDefaultSaturation = null
+    state.ColorDefaultTemperature = null
+    
     //state.history = []
     
 	//fetch SHM Alarm Status
@@ -1766,6 +1783,10 @@ def disarm() {
 
 		reset()
         
+        if (settings.DisarmedHueColor != "Disabled" && settings.DisarmedHueColor != null) {
+        	sendColor()
+        }
+        
 	} else {
     	reportStatus()
     }
@@ -1911,6 +1932,14 @@ private def armPanel(stay) {
         msg += "is ARMED ${mode}."
     }
 
+	if ((settings.ArmedHueColor != "Disabled" && settings.ArmedHueColor != null) || atomicState.hadalarm) {
+	    	
+            atomicState.hadalarm = false
+    		atomicState.hadalarmColor = null
+        	sendColor()
+    }
+
+
 	notify(msg)
     notifyVoice()
     
@@ -2025,8 +2054,8 @@ def activateAlarm() {
     
     def atype = atomicState.alertType
 
-    if ((atype == "Water" && settings.sirenOnWaterAlert) ||
-        (atype == "Smoke" && settings.sirenOnSmokeAlert) ||
+    if ((atype == "water" && settings.sirenOnWaterAlert) ||
+        (atype == "smoke" && settings.sirenOnSmokeAlert) ||
        ((atype == "contact" || atype == "acceleration" || atype == "motion") && settings.sirenOnIntrusionAlert))
     {
         switch (settings.sirenMode) {
@@ -2067,6 +2096,7 @@ def activateAlarm() {
        	it.on()
 	}
     /* turn on and set color to hues */
+    atomicState.hadalarm = true
   	sendColor()
 	settings.cameras*.take()
 
@@ -2122,7 +2152,7 @@ private def notify(msg) {
         }
 
         if (settings.pushbulletAlarm && settings.pushbullet) {
-            settings.pushbullet*.push(location.name, msg)
+            settings.pushbullets*.push(location.name, msg)
         }   
     } else {
         // Status change notification
@@ -2148,9 +2178,8 @@ private def notify(msg) {
             sendSms(phone4, msg)
         }
         }
-		
-        if (settings.pushbulletStatus && settings.pushbullet) {
-            settings.pushbullet*.push(location.name, msg)
+        if (settings.pushbulletStatus && settings.pushbullets) {
+            settings.pushbullets*.push(location.name, msg)
         }
     }
 }
@@ -2437,8 +2466,7 @@ def sendColor() {
 	//Initialize the hue and saturation
 	def hueColor = 0
 	def saturation = 100
-    def atype = state.alertType
-    
+    def temperature = 0
 
 	//Use the user specified brightness level. If they exceeded the min or max values, overwrite the brightness with the actual min/max
 	if (settings.hueBrightnessLevel == null)
@@ -2456,52 +2484,160 @@ def sendColor() {
     	settings.SmokeHueColor = "Disabled"
     if (settings.IntrusionHueColor == null)
     	settings.IntrusionHueColor = "Disabled"
+    if (settings.ArmedHueColor == null)
+    	settings.ArmedHueColor = "Disabled"
+    if (settings.DisarmedHueColor == null)
+    	settings.DisarmedHueColor = "Disabled"
       
-      //log.debug "in notify atype = $atype"
       
 	def color
+    
+    def armed = atomicState.armed
+    
+    log.debug "in notify atype = $atype"
+    
+    
+    if (armed) {
+      color = settings.ArmedHueColor
+    } else {
+      color = settings.DisarmedHueColor
+    }
+
+    def atype = state.alertType
+    
+    if (atomicState.hadalarm && atomicState.hadalarmColor == null) {
+
     if (atype == "smoke")
       color = settings.SmokeHueColor
     if (atype == "water")
        color = settings.WaterHueColor
-    else color = settings.IntrusionHueColor
+    if (atype == "contact" || atype == "acceleration" || atype == "motion")
+    	color = settings.IntrusionHueColor
+
+		atomicState.hadalarmColor = color
     
+    } else if (atomicState.hadalarm) {
+    	color = atomicState.hadalarmColor
+    }
     
-	//log.debug "in notify by color color = $color"
+	log.debug "in notify by color color = $color"
+
+   	if (atomicState.ColorDefaultHue == null) {
+    //If we have not changed the color YET, then save the current values as Default
     
+        	if (hues) {
+                def hueAttr
+                hues.each {
+                log.debug "[ Setting Light Color Defaults!! ] "
+                
+                hueAttr = it.currentColorMode
+                log.debug "Current ColorMode: ${hueAttr}"
+                def cMode = hueAttr as String
+            
+            if (cMode.toUpperCase().startsWith("W")) {
+                
+	                atomicState.ColorDefaultTemperature = 0
+                
+					hueAttr = it.currentHue
+        	        log.debug "Current hue: ${hueAttr}"
+            	    atomicState.ColorDefaultHue = hueAttr
+                
+                	hueAttr = it.currentSaturation
+                	log.debug "Current saturation: ${hueAttr}"
+	                atomicState.ColorDefaultSaturation = hueAttr
+                
+                } else {
+
+					atomicState.ColorDefaultHue = 0 
+                
+	                hueAttr = it.currentColorTemperature
+    	            log.debug "Current colorTemperature: ${hueAttr}"
+        	        atomicState.ColorDefaultTemperature = hueAttr
+                
+                }
+
+
+    			}            
+            	
+            }
+    	}
+
+                log.debug "Default Hue: ${atomicState.ColorDefaultHue}"
+                log.debug "Default Saturation: ${atomicState.ColorDefaultSaturation}"
+                log.debug "Default Temperature: ${atomicState.ColorDefaultTemperature}"
+                
+                 
+                
+
 	//Set the hue and saturation for the specified color.
     if (color != "Disabled")
     {
+
 	switch(color) {
     	
-		case "Blue":
-			hueColor = 65
+        case "Blue":
+            hueColor = 70
+            break;
+        case "Green":
+            hueColor = 39
+            break;
+        case "Yellow":
+            hueColor = 25
+            break;
+        case "Orange":
+            hueColor = 10
+            break;
+        case "Purple":
+            hueColor = 75
+            break;
+        case "Pink":
+            hueColor = 83
+            break;
+        case "Red":
+            hueColor = 100
+            break;
+	    case "White":
+            hueColor = 52
+            saturation = 19
+            break;
+        case "Daylight":
+            hueColor = 53
+            saturation = 91
+            break;
+        case "Soft White":
+            hueColor = 23
+            saturation = 56
+            break;
+        case "Warm White":
+            hueColor = 20
+            saturation = 80
+            break;
+        case "Default (Initial Color)":
+        	temperature = atomicState.ColorDefaultTemperature
+            if (temperature == 0 || temperature == null) {
+	            hueColor = atomicState.ColorDefaultHue
+    	        saturation = atomicState.ColorDefaultSaturation
+            }
 			break;
-		case "Green":
-			hueColor = 33
-			break;
-		case "Yellow":
-			hueColor = 25
-			break;
-		case "Orange":
-			hueColor = 10
-			break;
-		case "Purple":
-			hueColor = 82
-			saturation = 100
-			break;
-		case "Pink":
-			hueColor = 90.78
-			saturation = 67.84
-			break;
-		case "Red":
-			hueColor = 0
+        case "[TURN OFF]":
+			hueColor = "TURNOFF"
 			break;
 	}
+    
+		if (hueColor != "TURNOFF") {
 
-	//Change the color of the light
-	def newValue = [hue: hueColor, saturation: saturation, level: settings.hueBrightnessLevel]  
-	//def hues = settings.hues
-    hues*.setColor(newValue)
-    }
+	        	if (temperature > 0) {
+            	
+                	hues*.setColorTemperature(temperature)
+                
+                } else {
+					//Change the color of the light
+					def newValue = [hue: hueColor, saturation: saturation, level: settings.hueBrightnessLevel]  
+    				hues*.setColor(newValue)
+            }
+   		} else {
+        	//Turn off light
+    		hues*.off()
+		}
+	}
 }
