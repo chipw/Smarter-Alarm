@@ -7,7 +7,7 @@
  *  Please visit <http://statusbits.github.io/smartalarm/> for more
  *  information.
  *
- *  Version 2.6.4 (6/21/2017)
+ *  Version 2.6.5 (8/12/2017)
  *
  *  The latest version of this file can be found on GitHub at:
  *  <https://github.com/statusbits/smartalarm/blob/master/SmartAlarm.groovy>
@@ -47,7 +47,7 @@ definition(
 )
 
 private def getVersion() {
-    return "2.6.4"
+    return "2.6.5"
 }
 
 private def textCopyright() {
@@ -162,17 +162,19 @@ def pageSetup() {
         section("Setup Menu") {
             href "pageSelectZones", title:"Add/Remove Sensors", description:""
             href "pageConfigureZones", title:"Configure Zones (for Sensors)", description:""
-            href "pageArmingOptions", title:"Arming/Disarming Options", description:""
-            href "pageAlarmOptions", title:"Alarm Options", description:""
-            href "pageNotifications", title:"Notification Options", description:""
         }
-		section("About") {
-            href "pageAbout", title:"About Smarter Alarm", description:""
-   	    }
-        section(hideable: true, hidden: true, "Advanced") {
+		section("Arming & Disarming") {
+            href "pageArmingOptions", title:"Arming/Disarming Options", description:""
             href "pageRemoteOptions", title:"Remote Control Options", description:""
+        }
+		section("Alarms & Notifications") {
+			href "pageAlarmOptions", title:"Alarm Options", description:""
+            href "pageNotifications", title:"Notification Options", description:""
+   	    }
+        section(hideable: true, hidden: true, "Advanced & About") {
             href "pageRestApiOptions", title:"REST API Options", description:""
        	    label title:"Assign a name", required:false
+            href "pageAbout", title:"About Smarter Alarm", description:""
         }
     }
 }
@@ -516,7 +518,7 @@ def pageArmingOptions() {
 	def inputKeypads = [
     	name:		"keypads",
         type: 		"capability.lockCodes",
-        title: 		"Keypads for Exit / Entry delay",
+        title: 		"Keypads (useful for Exit / Entry delay)",
         multiple:	true,
         required:	false
     ]
@@ -572,7 +574,7 @@ def pageArmingOptions() {
     def inputExitEntryModeHub = [
         name:       "exitentryModeHub",
         type:       "mode",
-        title:      "Set Hub Mode to this when Exit or Entry Delay",
+        title:      "Set Hub Mode to this when Exit/Entry Delay (Optional)",
         multiple:   false,
         required:   false
     ]    
@@ -580,7 +582,7 @@ def pageArmingOptions() {
     def inputAlarmModeHub = [
         name:       "alarmModeHub",
         type:       "mode",
-        title:      "Set Hub Mode to this when Alarm activated",
+        title:      "Set Hub Mode to this when Alarm activated (Optional)",
         multiple:   false,
         required:   false
     ]    
@@ -689,7 +691,7 @@ def pageArmingOptions() {
             input inputAlarmModeHub
         }
 
-		section("Keypads") {
+		section("Keypads for Arm/Disarm") {
         	input inputKeypads
         }
 
@@ -699,14 +701,14 @@ def pageArmingOptions() {
             input inputDelayStay
 			input inputExitDelayStay
         }
-        section("Chime Devices") {
+        section("Chime Devices (for Zones & Status)") {
 			input inputChimeDevices
             input inputChimeOnStatusChange
         }
         if (ChimeOnStatusChange == true) {
         section("Quiet Hours (do not Chime for Arm/Disarm Change)") {
-        	input "QuietfromTime", "time", title: "From", required: true
-        	input "QuiettoTime", "time", title: "To", required: true
+        	input "QuietfromTime", "time", title: "From (Evening)", required: true
+        	input "QuiettoTime", "time", title: "To (Morning)", required: true
         }
 		}
         
@@ -908,6 +910,7 @@ def pageNotifications() {
         name:           "smsAlarmPhone2",
         type:           "bool",
         title:          "Notify on Alarm",
+        submitOnChange:	true,
         defaultValue:   false
     ]
 
@@ -915,6 +918,7 @@ def pageNotifications() {
         name:           "smsStatusPhone2",
         type:           "bool",
         title:          "Notify on Status Change",
+        submitOnChange:	true,
         defaultValue:   false
     ]
 
@@ -922,6 +926,7 @@ def pageNotifications() {
         name:           "phone3",
         type:           "phone",
         title:          "Send to this number",
+        submitOnChange:	true,
         required:       false
     ]
 
@@ -929,6 +934,7 @@ def pageNotifications() {
         name:           "smsAlarmPhone3",
         type:           "bool",
         title:          "Notify on Alarm",
+        submitOnChange:	true,
         defaultValue:   false
     ]
 
@@ -936,6 +942,7 @@ def pageNotifications() {
         name:           "smsStatusPhone3",
         type:           "bool",
         title:          "Notify on Status Change",
+        submitOnChange:	true,
         defaultValue:   false
     ]
 
@@ -943,6 +950,7 @@ def pageNotifications() {
         name:           "phone4",
         type:           "phone",
         title:          "Send to this number",
+        submitOnChange:	true,
         required:       false
     ]
 
@@ -950,6 +958,7 @@ def pageNotifications() {
         name:           "smsAlarmPhone4",
         type:           "bool",
         title:          "Notify on Alarm",
+        submitOnChange:	true,
         defaultValue:   false
     ]
 
@@ -957,6 +966,7 @@ def pageNotifications() {
         name:           "smsStatusPhone4",
         type:           "bool",
         title:          "Notify on Status Change",
+        submitOnChange:	true,
         defaultValue:   false
     ]
 
@@ -1054,6 +1064,14 @@ def pageNotifications() {
         multiple: 		false
     ]
 
+	def inputIntrusionHueHold = [
+        name:           "IntrusionHueHold",
+        type:           "bool",
+        title:          "If Alarm occurs, stay on Alarm Hue Color until after Re-Arming.",
+        required:       false,
+        defaultValue: 	true,
+    ]
+
 	def inputArmedHueColor = [
         name:           "ArmedHueColor",
         type:           "enum",
@@ -1098,26 +1116,41 @@ def pageNotifications() {
         }
         section("Text Message (SMS)") {
             input inputPhone1
+        	if (phone1) {
             input inputPhone1Alarm
             input inputPhone1Status
+			}
         }
         if (phone1) {
         section("Text Message (SMS) #2") {
             input inputPhone2
+           	if (phone2) {
             input inputPhone2Alarm
             input inputPhone2Status
+            }
         }
+        }
+        
+        if (phone2) {
         section("Text Message (SMS) #3") {
             input inputPhone3
-            input inputPhone3Alarm
+            if (phone3) {
+			input inputPhone3Alarm
             input inputPhone3Status
+            }
         }
+        }
+        
+        if (phone3) {
         section("Text Message (SMS) #4") {
             input inputPhone4
+			if (phone4) {
             input inputPhone4Alarm
             input inputPhone4Status
+            }
         }
         }
+        
         section("Audio Notifications") {
             input inputAudioPlayers
             if (audioPlayer) {
@@ -1146,10 +1179,11 @@ def pageNotifications() {
             input inputWaterHueColor
             input inputSmokeHueColor
             input inputIntrusionHueColor
+			input inputIntrusionHueHold            
             input inputArmedHueColor
             input inputDisarmedHueColor
             input inputHueBrightness
-            
+            atomicState.ColorDefaultHue = null            
             }
         }        
     }
@@ -1331,14 +1365,14 @@ def pageRestApiOptions() {
 }
 
 def installed() {
-    //LOG("installed()")
+    LOG("installed()")
 
     initialize()
     state.installed = true
 }
 
 def updated() {
-    //LOG("updated()")
+    LOG("updated()")
 
     unschedule()
     unsubscribe()
@@ -1361,6 +1395,7 @@ private def setupInit() {
         state.alarms = []
         state.history = []
         state.alertType = "None"
+        state.keypadcallback = false
     } else {
         def version = state.version as String
         if (version == null || version.startsWith('1')) {
@@ -1391,7 +1426,7 @@ private def initialize() {
     //LOG("current alarm state: $currentSHM")
     
     if (currentSHM == "away") {
-        atomicState.armed = true
+        atomicState.armed = true  
         atomicState.stay = false
     } else if (currentSHM == "stay") {
         atomicState.armed = true
@@ -1420,30 +1455,52 @@ private def initialize() {
 
 def gotDismissMessage(evt)
 {
-    //log.debug "Got the dismiss message from the notification device.. clearing alarm!"
+    log.debug "SA: Got the dismiss message from the notification device.. clearing alarm!"
     clearAlarm()
 }
 
 def gotKeypadStatusUpdateSyncMessage(evt)
 {
-    //log.debug "Got the status update message from Keypad! Value: '${evt.value}' Status: ${atomicState.armed}"
-	if (atomicState.armed == true) {
+    log.debug "SA: Got the status update message from Keypad! Value: '${evt.value}' Status: ${atomicState.armed}"
+    
+    if (evt.value == 'off') {
+     	if (!atomicState.armed) { 
+        	keypads?.each() { it.setDisarmed() }
+        } else {
+        	atomicState.keypadcallback = true
+        }
+        log.debug "SA: Keypad Disarmed"
+    } else if (evt.value == 'stay') {
+   		     keypads?.each() { it.setArmedStay() }
+	     	if (!atomicState.armed) { 
+				atomicState.keypadcallback = true
+            }
+			log.debug "SA: Keypad Armed Stay"
+    } else if (evt.value == 'away') {
+  		   	keypads?.each() { it.setArmedAway() }
+	     	if (!atomicState.armed) { 
+				atomicState.keypadcallback = true
+            }
+  	    	log.debug "SA: Keypad Armed Away"
+    }
+    
+	/*if (atomicState.armed == true) {
 		if (atomicState.stay == true) {
    		     keypads?.each() { it.setArmedStay() }
-		    //log.debug "Keypad Armed Stay"
+		    log.debug "SA: Keypad Armed Stay"
  	  	 } else {
   		   	keypads?.each() { it.setArmedAway() }
-  	    	//log.debug "Keypad Armed Away"
+  	    	log.debug "SA: Keypad Armed Away"
  	   }
     } else {
      	keypads?.each() { it.setDisarmed() }
-        //log.debug "Keypad Disarmed"
-    }
+        log.debug "SA: Keypad Disarmed"
+    }*/
     
 }
 
 private def clearAlarm() {
-    //LOG("clearAlarm()")
+    LOG("clearAlarm()")
     state.alarms = []
     settings.alarms*.off()
 
@@ -1468,7 +1525,7 @@ private def clearAlarm() {
 }
 
 private def initZones() {
-    //LOG("initZones()")
+    LOG("initZones()")
 
     state.zones = []
 
@@ -1563,7 +1620,7 @@ private def initZones() {
 }
 
 private def initButtons() {
-    //LOG("initButtons()")
+    LOG("initButtons()")
 
     state.buttonActions = []
     if (settings.remotes) {
@@ -1622,7 +1679,7 @@ def onSmoke(evt)    { onZoneEvent(evt, "smoke") }
 def onWater(evt)    { onZoneEvent(evt, "water") }
 
 private def onZoneEvent(evt, sensorType) {
-    //LOG("onZoneEvent(${evt.displayName}, ${sensorType})")
+    LOG("onZoneEvent(${evt.displayName}, ${sensorType})")
 
     state.alertType = sensorType
     def zone = getZoneForDevice(evt.deviceId, sensorType)
@@ -1667,7 +1724,7 @@ private def onZoneEvent(evt, sensorType) {
 }
 
 def onLocation(evt) {
-   //LOG("onLocation(${evt.value})")
+   LOG("onLocation(${evt.value})")
 
     String mode = evt.value
     if (settings.awayModes?.contains(mode)) {
@@ -1680,7 +1737,7 @@ def onLocation(evt) {
 }
 
 def onButtonEvent(evt) {
-    //LOG("onButtonEvent(${evt.displayName})")
+    LOG("onButtonEvent(${evt.displayName})")
 
     if (!state.buttonActions || !evt.data) {
         return
@@ -1703,7 +1760,7 @@ def onButtonEvent(evt) {
 }
 
 def armAway() {
-    //LOG("armAway()")
+    LOG("armAway()")
 	history("Armed Away", "Alarm armed away")
 
     if (!atomicState.armed || atomicState.stay) {
@@ -1719,7 +1776,7 @@ def armAway() {
 }
 
 def armStay() {
-    //LOG("armStay()")
+    LOG("armStay()")
 	history("Armed Stay", "Alarm armed stay")
 
     if (!atomicState.armed || !atomicState.stay) {
@@ -1737,11 +1794,11 @@ def armStay() {
 }
 
 def disarm() {
-    //LOG("disarm()")
+    LOG("disarm()")
 	history("Disarmed", "Alarm disarmed")
     
     if (atomicState.armed || atomicState.stay) {
-    	//LOG("disarm() -- was armed")
+    	LOG("disarm() -- was armed")
         atomicState.armed = false
         atomicState.stay = false
 		atomicState.entrydelay = false
@@ -1755,16 +1812,22 @@ def disarm() {
         keypads?.each() { it.setDisarmed() }
         
         if (settings.ChimeOnStatusChange == true) {
+        	log.debug "SA: keypadcallback is ${atomicState.keypadcallback}"
             def between = timeOfDayIsBetween(QuietfromTime, QuiettoTime, new Date(), location.timeZone)
-    		if (!between || (!QuietfromTime && !QuiettoTime)) {
-    	    	//LOG("disarm() -- CHIME")
+    		if ((!between || (!QuietfromTime && !QuiettoTime)) && !atomicState.keypadcallback) {
+    	    	LOG("disarm() -- CHIME")
 	    		chimeDevices?.each() { 
                	it.beep()
         	    }
-	    	}
+	    	} else {
+            	LOG("disarm() -- NO CHIME -- QUIET TIME")
+            }
 		}
         
-		SwitchesOnArmed?.each() { 
+        log.debug "SA: 1 Setting keypadcallback = false"
+        atomicState.keypadcallback = false
+        
+        SwitchesOnArmed?.each() { 
 	       	it.off()
 		}            
         
@@ -1795,14 +1858,14 @@ def disarm() {
 }
 
 def panic() {
-    //LOG("panic()")
+    LOG("panic()")
 	atomicState.armed = true
     state.alarms << "Panic"
     activateAlarm()
 }
 
 def reset() {
-    //LOG("reset()")
+    LOG("reset()")
 
     unschedule()
     clearAlarm()
@@ -1826,7 +1889,7 @@ def exitDelayExpired() {
     def armed = atomicState.armed
     def stay = atomicState.stay
 
-	//LOG("exitDelayExpired(${armed})")
+	LOG("exitDelayExpired(${armed})")
     
     if (!armed) {
         log.debug "exitDelayExpired: unexpected state!"
@@ -1860,7 +1923,7 @@ def exitDelayExpired() {
 }
 
 private def armPanel(stay) {
-    //LOG("armPanel(${stay})")
+    LOG("armPanel(${stay})")
 
     unschedule()
     clearAlarm()
@@ -1895,13 +1958,13 @@ private def armPanel(stay) {
     //LOG("settings.stayExitDelayOff ${settings.stayExitDelayOff})")
     def delay = armDelay && !(stay && settings.stayExitDelayOff) ? atomicState.delay : 0
     if (delay) {
-    	//LOG("setting Exit Delay")
+    	LOG("setting Exit Delay")
     	keypads?.each() { it.setExitDelay(delay) }
         myRunIn(delay, exitDelayExpired)
     }
     else
     {
-    	//LOG("No Exit Delay -- arming now")
+    	LOG("No Exit Delay -- arming now")
     	if (stay) {
     		keypads?.each() { it.setArmedStay() }
         } else {
@@ -1910,8 +1973,8 @@ private def armPanel(stay) {
         
         if (settings.ChimeOnStatusChange == true) {
             def between = timeOfDayIsBetween(QuietfromTime, QuiettoTime, new Date(), location.timeZone)
-    		if (!between || (!QuietfromTime && !QuiettoTime)) {
-    	    	//LOG("disarm() -- CHIME")
+    		if ((!between || (!QuietfromTime && !QuiettoTime)) && !atomicState.keypadcallback) {
+    	    	LOG("arming() -- CHIME")
 	    		chimeDevices?.each() { 
                	it.beep()
         	    }
@@ -1919,11 +1982,21 @@ private def armPanel(stay) {
 		}
 
     }
+    
+    log.debug "SA: 2 Setting keypadcallback = false"
+    atomicState.keypadcallback = false
+
+    //Close Virtual Contact Sensor to prepare SHM Alarm trigger
+   	if (settings.TriggerSHM == true) {
+		VirtualswitchSHM?.each() { 
+         	it.close()
+		}
+	}
 
 	SwitchesOnArmed?.each() { 
        	it.on()
 	}    
-    
+        
     def mode = stay ? "STAY" : "AWAY"
     def msg = "${location.name} "
     if (delay) {
@@ -1938,7 +2011,6 @@ private def armPanel(stay) {
     		atomicState.hadalarmColor = null
         	sendColor()
     }
-
 
 	notify(msg)
     notifyVoice()
@@ -2152,6 +2224,7 @@ private def notify(msg) {
         }
 
         if (settings.pushbulletAlarm && settings.pushbullet) {
+            log.info "Pushbullet Alarm Message"
             settings.pushbullets*.push(location.name, msg)
         }   
     } else {
@@ -2179,6 +2252,7 @@ private def notify(msg) {
         }
         }
         if (settings.pushbulletStatus && settings.pushbullets) {
+        	log.info "Pushbullet Status Message"
             settings.pushbullets*.push(location.name, msg)
         }
     }
@@ -2428,11 +2502,11 @@ private def mySendPush(msg) {
 }
 
 private def LOG(message) {
-    //log.trace message
+    log.trace message
 }
 
 private def STATE() {
-    //log.trace "state: ${state}"
+    log.trace "state: ${state}"
 }
 
 def alarmStatusHandler(evt) {
@@ -2516,7 +2590,7 @@ def sendColor() {
 
 		atomicState.hadalarmColor = color
     
-    } else if (atomicState.hadalarm) {
+    } else if (atomicState.hadalarm && settings.IntrusionHueHold) {
     	color = atomicState.hadalarmColor
     }
     
@@ -2535,7 +2609,17 @@ def sendColor() {
                 def cMode = hueAttr as String
             
             if (cMode.toUpperCase().startsWith("W")) {
+                //WHITE MODE
+					atomicState.ColorDefaultHue = 0 
                 
+	                hueAttr = it.currentColorTemperature
+    	            log.debug "Current colorTemperature: ${hueAttr}"
+        	        atomicState.ColorDefaultTemperature = hueAttr
+                
+                } else {
+
+					//COLOR MODE
+                    
 	                atomicState.ColorDefaultTemperature = 0
                 
 					hueAttr = it.currentHue
@@ -2545,14 +2629,6 @@ def sendColor() {
                 	hueAttr = it.currentSaturation
                 	log.debug "Current saturation: ${hueAttr}"
 	                atomicState.ColorDefaultSaturation = hueAttr
-                
-                } else {
-
-					atomicState.ColorDefaultHue = 0 
-                
-	                hueAttr = it.currentColorTemperature
-    	            log.debug "Current colorTemperature: ${hueAttr}"
-        	        atomicState.ColorDefaultTemperature = hueAttr
                 
                 }
 
@@ -2613,7 +2689,9 @@ def sendColor() {
             saturation = 80
             break;
         case "Default (Initial Color)":
+        
         	temperature = atomicState.ColorDefaultTemperature
+            
             if (temperature == 0 || temperature == null) {
 	            hueColor = atomicState.ColorDefaultHue
     	        saturation = atomicState.ColorDefaultSaturation
@@ -2627,11 +2705,12 @@ def sendColor() {
 		if (hueColor != "TURNOFF") {
 
 	        	if (temperature > 0) {
-            	
+            		log.debug "Setting temp: ${temperature}"
                 	hues*.setColorTemperature(temperature)
                 
                 } else {
 					//Change the color of the light
+                    log.debug "Setting hue: ${hueColor}   sat: ${saturation}"
 					def newValue = [hue: hueColor, saturation: saturation, level: settings.hueBrightnessLevel]  
     				hues*.setColor(newValue)
             }
